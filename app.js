@@ -23,7 +23,6 @@ window.addEventListener('load', () => {
     const grid = document.getElementById('canvas-grid');
     const mathLayer = document.getElementById('math-layer');
     const drawingLayer = document.getElementById('drawing-layer');
-    const mathKeyboard = document.getElementById('math-keyboard');
     const marquee = document.getElementById('selection-marquee');
     const toolBtns = document.querySelectorAll('.tool-btn');
     const shapeBtns = document.querySelectorAll('.shape-btn');
@@ -46,11 +45,11 @@ window.addEventListener('load', () => {
         currentTool = id;
         document.body.setAttribute('data-tool', id);
         
+        
         // Update UI
         toolBtns.forEach(btn => btn.classList.toggle('active', btn.id === id));
         shapeBtns.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-shape') === id));
         
-        if (id !== 'tool-math') mathKeyboard.classList.add('hidden');
         if (id !== 'tool-select') clearSelectionLayer();
     }
 
@@ -135,7 +134,6 @@ window.addEventListener('load', () => {
 
         mf.addEventListener('focusin', () => { 
             activeMathField = mf; 
-            mathKeyboard.classList.remove('hidden'); 
         });
 
         elements.push({ id, type: 'math', x: sx, y: sy, content });
@@ -144,7 +142,6 @@ window.addEventListener('load', () => {
         setTimeout(() => {
             mf.focus();
             activeMathField = mf;
-            mathKeyboard.classList.remove('hidden');
         }, 50);
         
         return block;
@@ -395,14 +392,11 @@ window.addEventListener('load', () => {
         if (e.key === 'e') setActiveTool('tool-eraser');
     });
 
-    // Math Keyboard Interactions
-    mathKeyboard.addEventListener('mousedown', (e) => {
-        const key = e.target.closest('.key'); 
-        if (key && activeMathField) { 
-            e.preventDefault(); 
-            activeMathField.executeCommand(['insert', key.getAttribute('data-command')]); 
-            activeMathField.focus(); 
-        }
+    // Scanner Integration
+    document.addEventListener('insertScanData', (e) => {
+        const { x, y, text } = e.detail;
+        console.log("Scanner received text:", text);
+        createMath(x, y, text);
     });
 
     console.log('MathNotes: Initialization Complete');
