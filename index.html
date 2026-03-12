@@ -13,6 +13,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- pdf.js for PDF import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- OpenCV.js for Image Preprocessing -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body data-tool="tool-select">
     <div id="app">
@@ -49,6 +53,10 @@
                 </button>
                 <button class="tool-btn" id="tool-arrow" title="Arrow (A)">
                     <i data-lucide="move-right"></i>
+                </button>
+                <div class="separator"></div>
+                <button class="tool-btn" id="tool-scan" title="Scan Notes">
+                    <i data-lucide="scan"></i>
                 </button>
             </div>
         </header>
@@ -97,45 +105,46 @@
                         <!-- Math Blocks Layer -->
                         <div id="math-layer"></div>
                     </div>
-                    <!-- Selection Marquee -->
-                    <div id="selection-marquee" class="hidden"></div>
+        <!-- Selection Marquee -->
+        <div id="selection-marquee" class="hidden"></div>
+        
+        <!-- Scanner Modal -->
+        <div id="scanner-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Scan Math Notes</h2>
+                    <button id="close-scanner" class="close-btn" title="Close"><i data-lucide="x"></i></button>
                 </div>
-            </main>
-        </div>
+                <div class="modal-body">
+                    <div id="scan-controls" class="scan-controls">
+                        <label class="scan-btn" title="Upload an image or PDF file">
+                            <i data-lucide="upload"></i> Upload File
+                            <input type="file" id="scan-upload" accept="image/png, image/jpeg, application/pdf" hidden>
+                        </label>
+                        <label class="scan-btn primary" title="Take a photo with your device camera">
+                            <i data-lucide="camera"></i> Take Photo
+                            <input type="file" id="scan-camera" accept="image/*" capture="environment" hidden>
+                        </label>
+                    </div>
+                    
+                    <div id="scan-processing-area" class="hidden">
+                        <div class="status-indicator">
+                            <i data-lucide="loader-2" class="spinner"></i> <span id="scan-status">Initializing AI Models...</span>
+                        </div>
+                        <canvas id="scan-canvas-output"></canvas>
+                        <canvas id="scan-canvas-input" hidden></canvas>
+                    </div>
 
-        <!-- Floating Math Keyboard -->
-        <div id="math-keyboard" class="math-keyboard hidden">
-            <!-- Row 1 -->
-            <div class="keyboard-row">
-                <button class="key" data-command="\sqrt{#0}">√</button>
-                <button class="key" data-command="^{2}">x²</button>
-                <button class="key" data-command="^{#0}">xⁿ</button>
-                <button class="key" data-command="\frac{#0}{#0}">frac</button>
-                <button class="key" data-command="\log_{#0}(#0)">log</button>
-                <button class="key" data-command="\ln(#0)">ln</button>
-            </div>
-            <!-- Row 2 -->
-            <div class="keyboard-row">
-                <button class="key" data-command="\int_{#0}^{#0} #0 dx">∫</button>
-                <button class="key" data-command="\sum_{#0}^{#0} #0">Σ</button>
-                <button class="key" data-command="\pi">π</button>
-                <button class="key" data-command="\alpha">α</button>
-                <button class="key" data-command="\beta">β</button>
-                <button class="key" data-command="\theta">θ</button>
-            </div>
-            <!-- Row 3 -->
-            <div class="keyboard-row">
-                <button class="key" data-command="\infty">∞</button>
-                <button class="key" data-command="\to">→</button>
-                <button class="key" data-command="\le">≤</button>
-                <button class="key" data-command="\ge">≥</button>
-                <button class="key" data-command="\ne">≠</button>
-            </div>
-            <!-- Row 4 -->
-            <div class="keyboard-row">
-                <button class="key" data-command="(#0)">( )</button>
-                <button class="key" data-command="[#0]">[ ]</button>
-                <button class="key" data-command="\{#0\}">{ }</button>
+                    <div id="scan-review-area" class="hidden">
+                        <h3>Review & Edit</h3>
+                        <p class="review-hint">The AI has extracted the following text and math. Correct any OCR mistakes before inserting.</p>
+                        <textarea id="scan-result-text" rows="6"></textarea>
+                        <div class="review-actions">
+                            <button id="scan-retry" class="btn secondary">Scan Another</button>
+                            <button id="scan-insert" class="btn primary"><i data-lucide="check"></i> Insert into Workspace</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -145,6 +154,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="scanner.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
