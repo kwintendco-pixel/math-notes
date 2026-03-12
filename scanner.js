@@ -116,16 +116,18 @@ document.addEventListener('DOMContentLoaded', () => {
             statusText.innerText = "Initializing AI OCR Model (Math + Text)...";
             console.log("Starting Tesseract...");
             
-            // Initialize Tesseract with English and Math equations
-            const worker = await Tesseract.createWorker('eng+equ', 1, {
+            // Initialize Tesseract worker explicitly for v5
+            const worker = await Tesseract.createWorker({
                 logger: m => {
                     if (m.status === 'recognizing text') {
                         statusText.innerText = `Scanning: ${Math.round(m.progress * 100)}%`;
-                    } else {
+                    } else if (m.status) {
                         statusText.innerText = `Loading AI: ${m.status}`;
                     }
                 }
             });
+            await worker.loadLanguage('eng+equ');
+            await worker.initialize('eng+equ');
 
             // Perform OCR on the visible canvas
             const { data: { text } } = await worker.recognize(canvasOut);
