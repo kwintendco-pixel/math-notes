@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathNotes - Pro Mathematical Workspace</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- MathLive for math editing -->
+    <script defer src="https://unpkg.com/mathlive"></script>
+    <!-- Lucide for icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- pdf.js for PDF import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body data-tool="tool-select">
+    <div id="app">
+        <!-- Menu Bar -->
+        <nav class="menu-bar">
+            <div class="menu-item" id="menu-new">New</div>
+            <div class="menu-item" id="menu-open">Open .mnf</div>
+            <div class="menu-item" id="menu-save">Save as .mnf</div>
+            <div class="menu-item" id="menu-export">Export PDF</div>
+        </nav>
+
+        <!-- Main Toolbar -->
+        <header class="toolbar">
+            <div class="logo">
+                <i data-lucide="calculator"></i>
+                <span>MathNotes</span>
+            </div>
+            <div class="tools">
+                <button class="tool-btn active" id="tool-select" title="Select & Move (V)">
+                    <i data-lucide="mouse-pointer-2"></i>
+                </button>
+                <button class="tool-btn" id="tool-math" title="Math Block (M)">
+                    <i data-lucide="sigma"></i>
+                </button>
+                <button class="tool-btn" id="tool-eraser" title="Eraser (E)">
+                    <i data-lucide="eraser"></i>
+                </button>
+                <div class="separator"></div>
+                <button class="tool-btn" id="tool-rect" title="Rectangle (R)">
+                    <i data-lucide="square"></i>
+                </button>
+                <button class="tool-btn" id="tool-circle" title="Circle (C)">
+                    <i data-lucide="circle"></i>
+                </button>
+                <button class="tool-btn" id="tool-arrow" title="Arrow (A)">
+                    <i data-lucide="move-right"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Shape Sidebar -->
+            <aside class="shape-sidebar">
+                <div class="sidebar-section">Diagram</div>
+                <button class="shape-btn" data-shape="line" title="Line">
+                    <i data-lucide="minus"></i>
+                </button>
+                <button class="shape-btn" data-shape="dash-line" title="Dashed Line">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="14" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+                </button>
+                <button class="shape-btn" data-shape="double-arrow" title="Double Arrow">
+                    <i data-lucide="move-horizontal"></i>
+                </button>
+                <button class="shape-btn" data-shape="right-arrow-heavy" title="Right Arrow Heavy">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="3"/></svg>
+                </button>
+                <button class="shape-btn" data-shape="connector" title="Connector">
+                    <i data-lucide="git-commit"></i>
+                </button>
+
+                <div class="sidebar-section">Shapes</div>
+                <button class="shape-btn" data-shape="square" title="Square">
+                    <i data-lucide="box"></i>
+                </button>
+                <button class="shape-btn" data-shape="ellipse" title="Ellipse">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="6"/></svg>
+                </button>
+                <button class="shape-btn" data-shape="triangle" title="Triangle">
+                    <i data-lucide="triangle"></i>
+                </button>
+            </aside>
+
+            <!-- Main Editor Area -->
+            <main id="editor-container">
+                <div id="canvas-grid" class="grid-background">
+                    <!-- Unified Content Layer -->
+                    <div id="workspace-content">
+                        <!-- PDF Rendering Layer -->
+                        <div id="pdf-layer"></div>
+                        <!-- Drawing Layer -->
+                        <svg id="drawing-layer" width="5000" height="5000"></svg>
+                        <!-- Math Blocks Layer -->
+                        <div id="math-layer"></div>
+                    </div>
+                    <!-- Selection Marquee -->
+                    <div id="selection-marquee" class="hidden"></div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Floating Math Keyboard -->
+        <div id="math-keyboard" class="math-keyboard hidden">
+            <!-- Row 1 -->
+            <div class="keyboard-row">
+                <button class="key" data-command="\sqrt{#0}">√</button>
+                <button class="key" data-command="^{2}">x²</button>
+                <button class="key" data-command="^{#0}">xⁿ</button>
+                <button class="key" data-command="\frac{#0}{#0}">frac</button>
+                <button class="key" data-command="\log_{#0}(#0)">log</button>
+                <button class="key" data-command="\ln(#0)">ln</button>
+            </div>
+            <!-- Row 2 -->
+            <div class="keyboard-row">
+                <button class="key" data-command="\int_{#0}^{#0} #0 dx">∫</button>
+                <button class="key" data-command="\sum_{#0}^{#0} #0">Σ</button>
+                <button class="key" data-command="\pi">π</button>
+                <button class="key" data-command="\alpha">α</button>
+                <button class="key" data-command="\beta">β</button>
+                <button class="key" data-command="\theta">θ</button>
+            </div>
+            <!-- Row 3 -->
+            <div class="keyboard-row">
+                <button class="key" data-command="\infty">∞</button>
+                <button class="key" data-command="\to">→</button>
+                <button class="key" data-command="\le">≤</button>
+                <button class="key" data-command="\ge">≥</button>
+                <button class="key" data-command="\ne">≠</button>
+            </div>
+            <!-- Row 4 -->
+            <div class="keyboard-row">
+                <button class="key" data-command="(#0)">( )</button>
+                <button class="key" data-command="[#0]">[ ]</button>
+                <button class="key" data-command="\{#0\}">{ }</button>
+            </div>
+        </div>
+
+        <!-- Hidden inputs -->
+        <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
+        <input type="file" id="mnf-upload" accept=".mnf" style="display: none;">
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

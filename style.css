@@ -1,0 +1,385 @@
+:root {
+    --bg-color: #f8f9fa;
+    --grid-color-light: #e0e4e8;
+    --grid-color-dark: #ced4da;
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --toolbar-color: #ffffff;
+    --text-color: #2b2d42;
+    --border-radius: 8px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --grid-size: 20px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body, html, #app {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background-color: var(--bg-color);
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Menu Bar */
+.menu-bar {
+    height: 30px;
+    background-color: #f1f3f5;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+    font-size: 0.85rem;
+    color: #495057;
+    z-index: 110;
+}
+
+.menu-item {
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.menu-item:hover {
+    background: #e9ecef;
+    color: var(--primary-color);
+}
+
+/* Toolbar */
+.toolbar {
+    height: 54px;
+    background-color: var(--toolbar-color);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--grid-color-light);
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    margin-right: 40px;
+}
+
+.tools {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tool-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+}
+
+.tool-btn:hover {
+    background-color: #f0f2f5;
+}
+
+.tool-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.separator {
+    width: 1px;
+    height: 24px;
+    background-color: var(--grid-color-light);
+    margin: 0 10px;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.shape-sidebar {
+    width: 60px;
+    background-color: white;
+    border-right: 1px solid var(--grid-color-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 8px;
+    z-index: 90;
+}
+
+.sidebar-section {
+    font-size: 0.7rem;
+    color: #adb5bd;
+    margin-top: 10px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.shape-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    transition: all 0.2s;
+}
+
+.shape-btn:hover {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+}
+
+.shape-btn.active {
+    background-color: rgba(67, 97, 238, 0.1);
+    color: var(--primary-color);
+    border-color: rgba(67, 97, 238, 0.2);
+}
+
+/* Editor Container */
+#editor-container {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.grid-background {
+    min-width: 5000px;
+    min-height: 5000px;
+    background-color: white;
+    background-image: 
+        linear-gradient(var(--grid-color-light) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color-light) 1px, transparent 1px),
+        linear-gradient(var(--grid-color-dark) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color-dark) 1px, transparent 1px);
+    background-size: 
+        var(--grid-size) var(--grid-size), 
+        var(--grid-size) var(--grid-size), 
+        calc(var(--grid-size) * 5) calc(var(--grid-size) * 5), 
+        calc(var(--grid-size) * 5) calc(var(--grid-size) * 5);
+    position: relative;
+}
+
+#pdf-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+#workspace-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5000px;
+    height: 5000px;
+    pointer-events: none; /* Container is passthrough */
+}
+
+#drawing-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none; /* Layer is passthrough */
+    z-index: 5;
+}
+.selectable-shape {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+#math-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Layer is passthrough */
+    z-index: 10;
+}
+
+/* MathLive Blocks */
+.math-block {
+    position: absolute;
+    padding: 4px 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    cursor: move;
+    min-width: 40px;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    pointer-events: auto;
+    user-select: none;
+    z-index: 100;
+}
+
+.math-block.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
+}
+
+math-field {
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    padding: 0;
+    pointer-events: auto; /* Ensure math field is interactive */
+}
+
+/* Selection Marquee */
+#selection-marquee {
+    position: absolute;
+    border: 1px dashed var(--primary-color);
+    background: rgba(67, 97, 238, 0.05);
+    pointer-events: none;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Element highlight on hover for eraser */
+.erasable:hover {
+    cursor: pointer;
+}
+
+[data-tool="tool-eraser"] .erasable:hover {
+    outline: 2px solid #ff4d4d !important;
+    filter: drop-shadow(0 0 5px rgba(255, 77, 77, 0.5));
+}
+
+.selectable-shape {
+    transition: stroke 0.2s, stroke-width 0.2s;
+}
+
+.selectable-shape.selected {
+    filter: drop-shadow(0 0 3px rgba(67, 97, 238, 0.5));
+}
+
+/* Cursor adjustments */
+[data-tool="tool-eraser"] #editor-container {
+    cursor: cell;
+}
+
+[data-tool="tool-select"] #editor-container {
+    cursor: default;
+}
+
+/* Keyboard */
+.math-keyboard {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    border: 1px solid var(--grid-color-light);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 200;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.math-keyboard.hidden {
+    transform: translate(-50%, 150%);
+}
+
+.keyboard-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.key {
+    width: 50px;
+    height: 40px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+}
+
+.key:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.key:active {
+    transform: translateY(0);
+    background: #e2e8f0;
+}
+
+/* Print Styles */
+@media print {
+    .toolbar, .math-keyboard, .shape-sidebar, .menu-bar {
+        display: none !important;
+    }
+    
+    body, html, #app {
+        height: auto;
+        overflow: visible;
+    }
+    
+    #editor-container {
+        overflow: visible;
+        height: auto;
+    }
+    
+    .grid-background {
+        min-width: 100%;
+        min-height: 100%;
+        background-color: white;
+    }
+
+    .math-block {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Ensure all elements are visible in PDF */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
