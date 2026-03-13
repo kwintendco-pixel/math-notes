@@ -1,4 +1,5 @@
 :root {
+    /* Color Variables Default: Light Mode */
     --bg-color: #f8f9fa;
     --grid-color-light: #e0e4e8;
     --grid-color-dark: #ced4da;
@@ -9,6 +10,33 @@
     --border-radius: 8px;
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     --grid-size: 20px;
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] {
+    --bg-color: #0f172a;
+    --grid-color-light: #1e293b;
+    --grid-color-dark: #334155;
+    --primary-color: #6366f1;
+    --primary-hover: #818cf8;
+    --toolbar-color: #1e293b;
+    --text-color: #f8fafc;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --glass-bg: rgba(30, 41, 59, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="sepia"] {
+    --bg-color: #fdf6e3;
+    --grid-color-light: #eee8d5;
+    --grid-color-dark: #e8dfc6;
+    --primary-color: #d33682;
+    --primary-hover: #b52b6e;
+    --toolbar-color: #fcf4dd;
+    --text-color: #586e75;
+    --glass-bg: rgba(253, 246, 227, 0.9);
+    --glass-border: rgba(211, 54, 130, 0.2);
 }
 
 * {
@@ -23,6 +51,8 @@ body, html, #app {
     width: 100%;
     overflow: hidden;
     background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
 }
 
 #app {
@@ -98,11 +128,11 @@ body, html, #app {
     transition: all 0.2s ease;
 }
 
-.tool-btn:hover {
-    background-color: #f0f2f5;
+.tool-btn:hover, .shape-btn:hover {
+    background-color: var(--grid-color-light);
 }
 
-.tool-btn.active {
+.tool-btn.active, .shape-btn.active {
     background-color: var(--primary-color);
     color: white;
 }
@@ -110,8 +140,47 @@ body, html, #app {
 .separator {
     width: 1px;
     height: 24px;
-    background-color: var(--grid-color-light);
+    background-color: var(--grid-color-dark);
     margin: 0 10px;
+}
+
+/* Dropdown Menu */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--toolbar-color);
+    min-width: 180px;
+    box-shadow: var(--shadow);
+    border-radius: var(--border-radius);
+    padding: 10px;
+    z-index: 150;
+    border: 1px solid var(--grid-color-dark);
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown-label {
+    font-size: 0.75rem;
+    color: var(--text-color);
+    opacity: 0.6;
+    margin-bottom: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.dropdown-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
 .main-content {
@@ -120,26 +189,7 @@ body, html, #app {
     overflow: hidden;
 }
 
-/* Sidebar */
-.shape-sidebar {
-    width: 60px;
-    background-color: white;
-    border-right: 1px solid var(--grid-color-light);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px 0;
-    gap: 8px;
-    z-index: 90;
-}
-
-.sidebar-section {
-    font-size: 0.7rem;
-    color: #adb5bd;
-    margin-top: 10px;
-    text-transform: uppercase;
-    font-weight: bold;
-}
+/* Note: Shape Sidebar Removed */
 
 /* Pen Tool Controls */
 .pen-controls {
@@ -201,12 +251,19 @@ body, html, #app {
     flex: 1;
     overflow: auto;
     position: relative;
+    background-color: var(--bg-color);
 }
 
+/* Grid Styles Engine */
 .grid-background {
     min-width: 5000px;
     min-height: 5000px;
-    background-color: white;
+    position: relative;
+    transition: background 0.3s;
+}
+
+/* Classic Mathematical */
+[data-grid="classic"] .grid-background {
     background-image: 
         linear-gradient(var(--grid-color-light) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid-color-light) 1px, transparent 1px),
@@ -217,7 +274,23 @@ body, html, #app {
         var(--grid-size) var(--grid-size), 
         calc(var(--grid-size) * 5) calc(var(--grid-size) * 5), 
         calc(var(--grid-size) * 5) calc(var(--grid-size) * 5);
-    position: relative;
+}
+
+/* Dotted */
+[data-grid="dots"] .grid-background {
+    background-image: radial-gradient(var(--grid-color-dark) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+}
+
+/* Lines */
+[data-grid="lines"] .grid-background {
+    background-image: linear-gradient(var(--grid-color-light) 1px, transparent 1px);
+    background-size: 100% calc(var(--grid-size) * 1.5);
+}
+
+/* Blank */
+[data-grid="blank"] .grid-background {
+    background-image: none;
 }
 
 #pdf-layer {
@@ -262,8 +335,8 @@ body, html, #app {
 .math-block {
     position: absolute;
     padding: 4px 8px;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 4px;
     cursor: move;
     min-width: 40px;
@@ -275,7 +348,8 @@ body, html, #app {
     z-index: 100;
 }
 
-.math-block.selected {
+.math-block:hover, .math-block.selected {
+    background: var(--toolbar-color);
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
 }
@@ -285,6 +359,7 @@ math-field {
     background: transparent;
     font-size: 1.2rem;
     padding: 0;
+    color: var(--text-color);
     pointer-events: auto; /* Ensure math field is interactive */
 }
 
@@ -315,8 +390,8 @@ math-field {
 }
 
 .text-block:hover, .text-block:focus {
-    border-color: #e2e8f0;
-    background: white;
+    border-color: var(--grid-color-dark);
+    background: var(--toolbar-color);
     box-shadow: var(--shadow);
 }
 
@@ -441,6 +516,130 @@ math-field {
 
 [data-tool="tool-select"] #editor-container {
     cursor: default;
+}
+[data-tool="tool-ask-ai"] #editor-container {
+    cursor: help;
+}
+
+/* === Ask AI Floating UI === */
+.floating-action-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: auto;
+    height: 50px;
+    padding: 0 20px;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 8px 16px rgba(168, 85, 247, 0.4);
+    z-index: 500;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.floating-action-btn.active {
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.5);
+    transform: scale(0.95);
+}
+
+.floating-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px rgba(168, 85, 247, 0.5);
+}
+
+.pulse-glow {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
+    70% { box-shadow: 0 0 0 15px rgba(168, 85, 247, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+}
+
+.glass-popup {
+    position: fixed;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    width: 300px;
+    padding: 0;
+    z-index: 600;
+    overflow: hidden;
+    transform-origin: bottom right;
+    animation: popupFade 0.3s ease-out;
+}
+
+@keyframes popupFade {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.ai-header {
+    background: rgba(99, 102, 241, 0.1);
+    padding: 12px 16px;
+    font-weight: bold;
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.ai-body {
+    padding: 16px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-color);
+}
+
+.typewriter {
+    overflow: hidden;
+    border-right: .15em solid var(--primary-color);
+    white-space: pre-wrap;
+    animation: typing 2s steps(40, end), blink-caret .75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: var(--primary-color); }
+}
+
+/* === Settings Modal Specifics === */
+.settings-content {
+    background: var(--toolbar-color);
+    max-width: 400px;
+}
+.setting-group {
+    margin-bottom: 20px;
+}
+.setting-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.form-select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--grid-color-dark);
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: 1rem;
 }
 
 /* Keyboard */
@@ -582,12 +781,12 @@ math-field {
 
 .status-indicator { display: flex; align-items: center; gap: 10px; color: var(--primary-color); margin-bottom: 15px; font-weight: 500;}
 
-#scan-canvas-output { max-width: 100%; max-height: 300px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; width: 100%; object-fit: contain; background: #f8f9fa;}
+#scan-canvas-output { max-width: 100%; max-height: 300px; border: 1px solid var(--grid-color-dark); border-radius: 8px; margin-bottom: 15px; width: 100%; object-fit: contain; background: var(--bg-color);}
 
 #scan-result-text {
     width: 100%; padding: 12px; border: 1px solid var(--grid-color-dark);
     border-radius: 8px; font-family: monospace; font-size: 1.1rem; resize: vertical; margin-bottom: 15px;
-    background: #f8fafc;
+    background: var(--bg-color); color: var(--text-color);
 }
 
 #scan-result-text:focus { outline: 2px solid var(--primary-color); border-color: transparent; }
@@ -630,9 +829,17 @@ math-field {
     }
     
     .shape-sidebar {
-        width: 50px;
+        display: none;
     }
     
+    .floating-action-btn {
+        bottom: 20px;
+        right: 20px;
+        height: 40px;
+        padding: 0 15px;
+        font-size: 0.9rem;
+    }
+
     .modal-content {
         width: 95%;
         margin: 10px;

@@ -445,7 +445,7 @@ window.addEventListener('load', () => {
     // --- Core Mouse/Touch Dispatchers ---
 
     function handlePointerDown(e) {
-        if (e.target.closest('.toolbar') || e.target.closest('.shape-sidebar') || e.target.closest('.menu-bar')) return;
+        if (e.target.closest('.toolbar') || e.target.closest('.dropdown') || e.target.closest('.menu-bar') || e.target.closest('.modal') || e.target.closest('.floating-action-btn') || e.target.closest('.glass-popup')) return;
         
         const p = getPos(e);
         isPointerDown = true;
@@ -662,7 +662,7 @@ window.addEventListener('load', () => {
 
     // Control Wiring
     toolBtns.forEach(btn => btn.addEventListener('click', () => setActiveTool(btn.id)));
-    shapeBtns.forEach(btn => btn.addEventListener('click', () => setActiveTool(btn.getAttribute('data-shape'))));
+    if (shapeBtns) shapeBtns.forEach(btn => btn.addEventListener('click', () => setActiveTool(btn.getAttribute('data-shape'))));
 
     // Menu Wiring
     document.getElementById('menu-new').onclick = () => { elements = []; mathLayer.innerHTML = ''; drawingLayer.innerHTML = ''; selectedElements.clear(); initMarkers(); };

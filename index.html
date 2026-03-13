@@ -20,7 +20,7 @@
     <!-- Tesseract.js for OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
-<body data-tool="tool-select">
+<body data-tool="tool-select" data-theme="light" data-grid="classic">
     <div id="app">
         <!-- Menu Bar -->
         <nav class="menu-bar">
@@ -57,53 +57,39 @@
                 <button class="tool-btn" id="tool-image" title="Insert Image (I)">
                     <i data-lucide="image"></i>
                 </button>
-                <button class="tool-btn" id="tool-rect" title="Rectangle (R)">
-                    <i data-lucide="square"></i>
-                </button>
-                <button class="tool-btn" id="tool-circle" title="Circle (C)">
-                    <i data-lucide="circle"></i>
-                </button>
-                <button class="tool-btn" id="tool-arrow" title="Arrow (A)">
-                    <i data-lucide="move-right"></i>
-                </button>
+                <!-- Collapsible Shapes Dropdown -->
+                <div class="dropdown">
+                    <button class="tool-btn" id="tool-shapes" title="Shapes (S)">
+                        <i data-lucide="shapes"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-label">Draw Shape</div>
+                        <div class="dropdown-grid">
+                            <button class="shape-btn" data-shape="square" title="Square"><i data-lucide="box"></i></button>
+                            <button class="shape-btn" data-shape="circle" title="Circle"><i data-lucide="circle"></i></button>
+                            <button class="shape-btn" data-shape="triangle" title="Triangle"><i data-lucide="triangle"></i></button>
+                            <button class="shape-btn" data-shape="line" title="Line"><i data-lucide="minus"></i></button>
+                            <button class="shape-btn" data-shape="arrow" title="Arrow"><i data-lucide="move-right"></i></button>
+                            <button class="shape-btn" data-shape="double-arrow" title="Double Arrow"><i data-lucide="move-horizontal"></i></button>
+                            <button class="shape-btn" data-shape="dash-line" title="Dashed Line"><i data-lucide="more-horizontal"></i></button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="separator"></div>
                 <button class="tool-btn" id="tool-scan" title="Scan Notes">
                     <i data-lucide="scan"></i>
+                </button>
+                <div class="separator"></div>
+                <!-- Settings Button -->
+                <button class="tool-btn" id="tool-settings" title="Workspace Settings">
+                    <i data-lucide="settings"></i>
                 </button>
             </div>
         </header>
 
         <div class="main-content">
-            <!-- Shape Sidebar -->
-            <aside class="shape-sidebar">
-                <div class="sidebar-section">Diagram</div>
-                <button class="shape-btn" data-shape="line" title="Line">
-                    <i data-lucide="minus"></i>
-                </button>
-                <button class="shape-btn" data-shape="dash-line" title="Dashed Line">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="14" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
-                </button>
-                <button class="shape-btn" data-shape="double-arrow" title="Double Arrow">
-                    <i data-lucide="move-horizontal"></i>
-                </button>
-                <button class="shape-btn" data-shape="right-arrow-heavy" title="Right Arrow Heavy">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="3"/></svg>
-                </button>
-                <button class="shape-btn" data-shape="connector" title="Connector">
-                    <i data-lucide="git-commit"></i>
-                </button>
-
-                <div class="sidebar-section">Shapes</div>
-                <button class="shape-btn" data-shape="square" title="Square">
-                    <i data-lucide="box"></i>
-                </button>
-                <button class="shape-btn" data-shape="ellipse" title="Ellipse">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="6"/></svg>
-                </button>
-                <button class="shape-btn" data-shape="triangle" title="Triangle">
-                    <i data-lucide="triangle"></i>
-                </button>
-            </aside>
+            <!-- Removed Shape Sidebar previously here -->
 
             <!-- Main Editor Area -->
             <main id="editor-container">
@@ -117,8 +103,58 @@
                         <!-- Math Blocks Layer -->
                         <div id="math-layer"></div>
                     </div>
+                </div>
+            </main>
+        </div>
         <!-- Selection Marquee -->
         <div id="selection-marquee" class="hidden"></div>
+
+        <!-- Ask AI Floating Button -->
+        <button id="ask-ai-trigger" title="Ask AI About Section" class="floating-action-btn pulse-glow">
+            <i data-lucide="sparkles"></i> 
+            <span>Ask AI</span>
+        </button>
+
+        <!-- Ask AI Popup -->
+        <div id="ai-popup" class="glass-popup hidden">
+            <div class="ai-header">
+                <i data-lucide="bot"></i> AI Analysis
+                <button id="close-ai" class="icon-btn"><i data-lucide="x"></i></button>
+            </div>
+            <div id="ai-content" class="ai-body">
+                <div class="typewriter">Analyzing assignment...</div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal hidden">
+            <div class="modal-content settings-content">
+                <div class="modal-header">
+                    <h2>Workspace Settings</h2>
+                    <button id="close-settings" class="close-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label>Theme</label>
+                        <select id="theme-select" class="form-select">
+                            <option value="light">Light Mode</option>
+                            <option value="dark">Dark Mode</option>
+                            <option value="sepia">Sepia Focus</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>Grid Style</label>
+                        <select id="grid-select" class="form-select">
+                            <option value="classic">Mathematical Grid</option>
+                            <option value="dots">Dotted Grid</option>
+                            <option value="lines">Lined Paper</option>
+                            <option value="blank">Blank Canvas</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         
         <!-- Scanner Modal -->
         <div id="scanner-modal" class="modal hidden">

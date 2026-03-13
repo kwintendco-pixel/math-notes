@@ -103,17 +103,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function processImageDetections() {
         try {
-            statusText.innerText = "Initializing AI OCR Model (Math + Text)...";
+            statusText.innerText = "Initializing AI OCR Model (Fast Mode)...";
             const worker = await Tesseract.createWorker({
                 logger: m => {
-                    if (m.status === 'recognizing text') statusText.innerText = `Scanning: ${Math.round(m.progress * 100)}%`;
-                    else if (m.status) statusText.innerText = `Loading AI: ${m.status}`;
+                    if (m.status === 'recognizing text') {
+                        statusText.innerText = `Scanning: ${Math.round(m.progress * 100)}%`;
+                    } else if (m.status) {
+                        statusText.innerText = `Loading AI: ${m.status}`;
+                    }
                 }
             });
-            await worker.loadLanguage('eng+equ');
-            await worker.initialize('eng+equ');
-
-            const { data: { text } } = await worker.recognize(canvasOut);
+            
+            // Drop 'equ' which was causing the indefinite hang.
+            // Fast English text + math heuristic fallback.
+            await worker.loadLanguage('eng');
+            await worker.initialize('eng');
+            
+            // Add a timeout fallback in case of Tesseract hanging over 30s
+            const recognizePromise = worker.recognize(canvasOut);
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("OCR timeout after 30 seconds")), 30000));
+            
+            const result = await Promise.race([recognizePromise, timeoutPromise]);
+            const text = result.data.text;
+            
             await worker.terminate();
             
             const cleanedText = postProcessContent(text);
@@ -128,14 +140,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function postProcessContent(rawText) {
         let txt = rawText.replace(/\n\s*\n/g, '\n\n');
-        txt = txt.replace(/√/g, 'sq'); 
-        txt = txt.replace(/∞/g, 'inf');
-        txt = txt.replace(/∑/g, 'sum');
-        txt = txt.replace(/∫/g, 'int');
-        txt = txt.replace(/≤/g, '<=');
-        txt = txt.replace(/≥/g, '>=');
+        // Map common OCR errors to math symbols
+        txt = txt.replace(/√|v\//g, 'sq'); 
+        txt = txt.replace(/∞|oo/gi, 'inf');
+        txt = txt.replace(/∑|E /g, 'sum');
+        txt = txt.replace(/∫|s /g, 'int');
+        txt = txt.replace(/≤|<=/g, '<=');
+        txt = txt.replace(/≥|>=/g, '>=');
         txt = txt.replace(/÷/g, '/');
-        txt = txt.replace(/×/g, '*');
+        txt = txt.replace(/×| x /g, '*');
         return txt.trim();
     }
 
