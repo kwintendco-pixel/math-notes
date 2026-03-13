@@ -141,6 +141,36 @@ body, html, #app {
     font-weight: bold;
 }
 
+/* Pen Tool Controls */
+.pen-controls {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--grid-color-light);
+}
+
+[data-tool="tool-pen"] .pen-controls {
+    display: flex;
+}
+
+.pen-color-picker {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+}
+
+.pen-size-slider {
+    width: 40px;
+    accent-color: var(--primary-color);
+}
+
 .shape-btn {
     width: 40px;
     height: 40px;
@@ -258,6 +288,102 @@ math-field {
     pointer-events: auto; /* Ensure math field is interactive */
 }
 
+/* Text Blocks */
+.text-block {
+    position: absolute;
+    min-width: 100px;
+    min-height: 24px;
+    padding: 8px 12px;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-color);
+    background: transparent;
+    border: 1px solid transparent; /* Transparent boundary until hover/focus */
+    border-radius: var(--border-radius);
+    outline: none;
+    cursor: text;
+    pointer-events: auto;
+    z-index: 100;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.text-block:empty:before {
+    content: attr(data-placeholder);
+    color: #adb5bd;
+    pointer-events: none;
+}
+
+.text-block:hover, .text-block:focus {
+    border-color: #e2e8f0;
+    background: white;
+    box-shadow: var(--shadow);
+}
+
+.text-block.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
+    cursor: move;
+}
+
+.text-block math-field {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: #f8f9fa;
+    padding: 2px 4px;
+    font-size: 1.1em;
+}
+
+.text-block math-field:focus-within {
+    border-color: var(--primary-color);
+    background: white;
+}
+
+/* Image Layer/Blocks */
+.image-block {
+    position: absolute;
+    pointer-events: auto;
+    z-index: 90;
+    cursor: move;
+    border: 1px solid transparent;
+}
+
+.image-block.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
+}
+
+.image-block img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.image-resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border: 1px solid var(--primary-color);
+    border-radius: 50%;
+    display: none;
+}
+
+.image-block.selected .image-resize-handle {
+    display: block;
+}
+
+.image-resize-handle.br {
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+}
+
 /* Selection Marquee */
 #selection-marquee {
     position: absolute;
@@ -288,9 +414,29 @@ math-field {
     filter: drop-shadow(0 0 3px rgba(67, 97, 238, 0.5));
 }
 
+/* Pen Paths */
+.pen-path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: auto;
+}
+
+.pen-path.selected {
+    filter: drop-shadow(0 0 3px rgba(67, 97, 238, 0.5));
+}
+
 /* Cursor adjustments */
 [data-tool="tool-eraser"] #editor-container {
     cursor: cell;
+}
+
+[data-tool="tool-pen"] #editor-container {
+    cursor: crosshair;
+}
+
+[data-tool="tool-text"] #editor-container {
+    cursor: text;
 }
 
 [data-tool="tool-select"] #editor-container {
@@ -448,3 +594,65 @@ math-field {
 
 .review-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .review-hint { font-size: 0.85rem; color: #6c757d; margin-bottom: 10px; }
+
+/* Responsive & Mobile Design */
+@media (max-width: 768px) {
+    .menu-bar {
+        padding: 0 10px;
+        gap: 10px;
+        font-size: 0.75rem;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .toolbar {
+        padding: 0 10px;
+        overflow-x: auto;
+    }
+    
+    .logo {
+        margin-right: 15px;
+        font-size: 1rem;
+    }
+    
+    .logo span {
+        display: none; /* Hide text, keep calculator icon */
+    }
+    
+    .tools {
+        gap: 4px;
+    }
+    
+    .tool-btn, .shape-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .shape-sidebar {
+        width: 50px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .scan-controls {
+        flex-direction: column;
+    }
+    
+    .math-keyboard {
+        width: 100%;
+        border-radius: 12px 12px 0 0;
+        bottom: 0;
+        padding: 10px 5px;
+    }
+    
+    .key {
+        width: 40px;
+        height: 36px;
+        font-size: 1rem;
+    }
+}
+

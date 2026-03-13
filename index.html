@@ -13,6 +13,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- pdf.js for PDF import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- html2canvas for PDF export (captures DOM) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- OpenCV.js for Image Preprocessing -->
     <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
     <!-- Tesseract.js for OCR -->
@@ -41,10 +43,20 @@
                 <button class="tool-btn" id="tool-math" title="Math Block (M)">
                     <i data-lucide="sigma"></i>
                 </button>
+                <button class="tool-btn" id="tool-text" title="Text Block (T)">
+                    <i data-lucide="type"></i>
+                </button>
+                <div class="separator"></div>
+                <button class="tool-btn" id="tool-pen" title="Pen Tool (P)">
+                    <i data-lucide="pen-tool"></i>
+                </button>
                 <button class="tool-btn" id="tool-eraser" title="Eraser (E)">
                     <i data-lucide="eraser"></i>
                 </button>
                 <div class="separator"></div>
+                <button class="tool-btn" id="tool-image" title="Insert Image (I)">
+                    <i data-lucide="image"></i>
+                </button>
                 <button class="tool-btn" id="tool-rect" title="Rectangle (R)">
                     <i data-lucide="square"></i>
                 </button>
@@ -151,6 +163,7 @@
         <!-- Hidden inputs -->
         <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
         <input type="file" id="mnf-upload" accept=".mnf" style="display: none;">
+        <input type="file" id="image-upload" accept="image/*" style="display: none;">
     </div>
 
     <!-- Scripts -->
