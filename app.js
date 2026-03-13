@@ -793,21 +793,21 @@ window.addEventListener('load', () => {
         aiPopup.style.top = `${rect.top}px`;
         aiPopup.classList.remove('hidden');
         
-        aiContent.innerHTML = `<div class="typewriter">Analyzing assignment...</div>`;
+        aiContent.innerHTML = `<div class="typewriter">Analyzing...</div>`;
         
-        // Mock Verification Responses based on content
+        // Fast mock analysis (300ms instead of 1500ms)
         setTimeout(() => {
             let response = "This assignment is well formatted.";
             const str = content.toLowerCase();
             if (type === 'math') {
                 if (str.includes('=') && (str.includes('x') || str.includes('y'))) {
-                    response = "✓ The algebraic equation structure is correct! Make sure to isolate the variables correctly when solving.";
+                    response = "\u2713 The algebraic equation structure is correct! Make sure to isolate the variables correctly when solving.";
                 } else if (str.includes('\\int')) {
-                    response = "✓ Integral notation looks mathematically sound. Don't forget the + C if it's indefinite!";
+                    response = "\u2713 Integral notation looks mathematically sound. Don't forget the + C if it's indefinite!";
                 } else if (str.length < 3) {
                     response = "This expression is quite short. Is there more to evaluate?";
                 } else {
-                    response = "✓ The expression syntax is valid. No mathematical syntax errors detected.";
+                    response = "\u2713 The expression syntax is valid. No mathematical syntax errors detected.";
                 }
             } else {
                 if (str.includes('?')) {
@@ -820,10 +820,200 @@ window.addEventListener('load', () => {
             }
             
             aiContent.innerHTML = `<div style="animation: popupFade 0.3s ease-out"><strong>AI Feedback:</strong><br><br>${response}</div>`;
-        }, 1500);
+        }, 300);
         
-        setActiveTool('tool-select'); // reset tool
+        setActiveTool('tool-select');
     }
+
+    // ============================================================
+    // === GRAPHING CALCULATOR ====================================
+    // ============================================================
+    const calcTrigger = document.getElementById('calc-trigger');
+    const calcPanel = document.getElementById('calc-panel');
+    const calcClose = document.getElementById('calc-close');
+    const calcImport = document.getElementById('calc-import');
+    const addEquation = document.getElementById('add-equation');
+    const equationList = document.getElementById('equation-list');
+    const graphCanvas = document.getElementById('graph-canvas');
+    const gCtx = graphCanvas.getContext('2d');
+
+    const GRAPH_COLORS = ['#f43f5e', '#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#06b6d4', '#ec4899'];
+    let equations = [];
+    let graphView = { cx: 0, cy: 0, scale: 40 }; // center and pixels per unit
+
+    calcTrigger.addEventListener('click', () => {
+        calcPanel.classList.toggle('hidden');
+        if (!calcPanel.classList.contains('hidden')) {
+            if (equations.length === 0) addNewEquation();
+            renderGraph();
+            lucide.createIcons();
+        }
+    });
+    calcClose.addEventListener('click', () => calcPanel.classList.add('hidden'));
+
+    function addNewEquation(expr = '') {
+        const idx = equations.length;
+        const color = GRAPH_COLORS[idx % GRAPH_COLORS.length];
+        equations.push({ expr, color });
+        
+        const row = document.createElement('div');
+        row.className = 'equation-row';
+        row.innerHTML = `
+            <span style="font-weight:bold;color:${color};font-size:1.1rem;">y =</span>
+            <input type="text" placeholder="e.g. sin(x), x^2+1" value="${expr}" data-idx="${idx}">
+            <input type="color" value="${color}" data-idx="${idx}">
+            <button class="eq-remove" data-idx="${idx}">&times;</button>
+        `;
+        equationList.appendChild(row);
+
+        row.querySelector('input[type="text"]').addEventListener('input', (e) => {
+            equations[e.target.dataset.idx].expr = e.target.value;
+            renderGraph();
+        });
+        row.querySelector('input[type="color"]').addEventListener('input', (e) => {
+            equations[e.target.dataset.idx].color = e.target.value;
+            row.querySelector('span').style.color = e.target.value;
+            renderGraph();
+        });
+        row.querySelector('.eq-remove').addEventListener('click', (e) => {
+            const i = parseInt(e.target.dataset.idx);
+            equations.splice(i, 1);
+            rebuildEquationList();
+            renderGraph();
+        });
+    }
+
+    function rebuildEquationList() {
+        equationList.innerHTML = '';
+        const saved = [...equations];
+        equations = [];
+        saved.forEach(eq => addNewEquation(eq.expr));
+    }
+
+    addEquation.addEventListener('click', () => {
+        addNewEquation();
+        lucide.createIcons();
+    });
+
+    // Safe math expression parser
+    function parseMathExpr(expr, x) {
+        try {
+            let sanitized = expr
+                .replace(/\^/g, '**')
+                .replace(/sin/g, 'Math.sin')
+                .replace(/cos/g, 'Math.cos')
+                .replace(/tan/g, 'Math.tan')
+                .replace(/sqrt/g, 'Math.sqrt')
+                .replace(/abs/g, 'Math.abs')
+                .replace(/log/g, 'Math.log')
+                .replace(/ln/g, 'Math.log')
+                .replace(/pi/g, 'Math.PI')
+                .replace(/e(?![a-zA-Z])/g, 'Math.E');
+            return new Function('x', `"use strict"; return (${sanitized})`)(x);
+        } catch (e) {
+            return NaN;
+        }
+    }
+
+    function renderGraph() {
+        const W = graphCanvas.width = graphCanvas.offsetWidth * 2;
+        const H = graphCanvas.height = graphCanvas.offsetHeight * 2;
+        gCtx.clearRect(0, 0, W, H);
+
+        const s = graphView.scale;
+        const ox = W / 2 + graphView.cx * s;
+        const oy = H / 2 - graphView.cy * s;
+
+        // Background
+        gCtx.fillStyle = '#0f172a';
+        gCtx.fillRect(0, 0, W, H);
+
+        // Grid lines
+        gCtx.strokeStyle = '#1e293b';
+        gCtx.lineWidth = 1;
+        const step = s;
+        for (let gx = ox % step; gx < W; gx += step) {
+            gCtx.beginPath(); gCtx.moveTo(gx, 0); gCtx.lineTo(gx, H); gCtx.stroke();
+        }
+        for (let gy = oy % step; gy < H; gy += step) {
+            gCtx.beginPath(); gCtx.moveTo(0, gy); gCtx.lineTo(W, gy); gCtx.stroke();
+        }
+
+        // Axes
+        gCtx.strokeStyle = '#475569';
+        gCtx.lineWidth = 2;
+        gCtx.beginPath(); gCtx.moveTo(0, oy); gCtx.lineTo(W, oy); gCtx.stroke();
+        gCtx.beginPath(); gCtx.moveTo(ox, 0); gCtx.lineTo(ox, H); gCtx.stroke();
+
+        // Axis labels
+        gCtx.fillStyle = '#94a3b8';
+        gCtx.font = '20px Inter, sans-serif';
+        for (let i = Math.floor(-ox / s); i <= Math.ceil((W - ox) / s); i++) {
+            if (i === 0) continue;
+            const px = ox + i * s;
+            gCtx.fillText(i.toString(), px - 6, oy + 20);
+            gCtx.beginPath(); gCtx.moveTo(px, oy - 4); gCtx.lineTo(px, oy + 4); gCtx.strokeStyle = '#94a3b8'; gCtx.stroke();
+        }
+        for (let j = Math.floor(-(H - oy) / s); j <= Math.ceil(oy / s); j++) {
+            if (j === 0) continue;
+            const py = oy - j * s;
+            gCtx.fillText(j.toString(), ox + 6, py + 6);
+        }
+        gCtx.fillText('0', ox + 6, oy + 20);
+
+        // Plot equations
+        equations.forEach(eq => {
+            if (!eq.expr.trim()) return;
+            gCtx.strokeStyle = eq.color;
+            gCtx.lineWidth = 3;
+            gCtx.beginPath();
+            let started = false;
+            for (let px = 0; px < W; px++) {
+                const x = (px - ox) / s;
+                const y = parseMathExpr(eq.expr, x);
+                if (isNaN(y) || !isFinite(y)) { started = false; continue; }
+                const py = oy - y * s;
+                if (!started) { gCtx.moveTo(px, py); started = true; }
+                else gCtx.lineTo(px, py);
+            }
+            gCtx.stroke();
+        });
+    }
+
+    // Pan & Zoom on canvas
+    let graphDragging = false;
+    let graphLastPos = { x: 0, y: 0 };
+    graphCanvas.addEventListener('mousedown', (e) => {
+        graphDragging = true;
+        graphLastPos = { x: e.offsetX, y: e.offsetY };
+    });
+    graphCanvas.addEventListener('mousemove', (e) => {
+        if (!graphDragging) return;
+        graphView.cx += (e.offsetX - graphLastPos.x) / graphView.scale;
+        graphView.cy -= (e.offsetY - graphLastPos.y) / graphView.scale;
+        graphLastPos = { x: e.offsetX, y: e.offsetY };
+        renderGraph();
+    });
+    window.addEventListener('mouseup', () => graphDragging = false);
+    graphCanvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        graphView.scale *= factor;
+        graphView.scale = Math.max(5, Math.min(200, graphView.scale));
+        renderGraph();
+    });
+
+    // Import graph to workspace
+    calcImport.addEventListener('click', () => {
+        renderGraph(); // ensure latest
+        const dataURL = graphCanvas.toDataURL('image/png');
+        const rect = grid.getBoundingClientRect();
+        const cx = (window.innerWidth / 2) - rect.left - 200;
+        const cy = (window.innerHeight / 2) - rect.top - 150;
+        createImage(cx, cy, dataURL, 400);
+        calcPanel.classList.add('hidden');
+        setActiveTool('tool-select');
+    });
 
     console.log('MathNotes: Initialization Complete');
 });

@@ -109,11 +109,33 @@
         <!-- Selection Marquee -->
         <div id="selection-marquee" class="hidden"></div>
 
+        <!-- Graphing Calculator Trigger -->
+        <button id="calc-trigger" title="Graphing Calculator" class="floating-action-btn calc-btn">
+            <i data-lucide="function-square"></i>
+            <span>Graph</span>
+        </button>
+
         <!-- Ask AI Floating Button -->
         <button id="ask-ai-trigger" title="Ask AI About Section" class="floating-action-btn pulse-glow">
             <i data-lucide="sparkles"></i> 
             <span>Ask AI</span>
         </button>
+
+        <!-- Graphing Calculator Panel -->
+        <div id="calc-panel" class="calc-panel hidden">
+            <div class="calc-header">
+                <span><i data-lucide="function-square"></i> Graphing Calculator</span>
+                <div class="calc-header-actions">
+                    <button id="calc-import" class="calc-action-btn" title="Import graph to workspace"><i data-lucide="download"></i></button>
+                    <button id="calc-close" class="icon-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+            </div>
+            <canvas id="graph-canvas" width="400" height="300"></canvas>
+            <div id="equation-list" class="equation-list">
+                <!-- Equations will be added dynamically -->
+            </div>
+            <button id="add-equation" class="calc-add-btn"><i data-lucide="plus"></i> Add Equation</button>
+        </div>
 
         <!-- Ask AI Popup -->
         <div id="ai-popup" class="glass-popup hidden">
