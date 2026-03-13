@@ -37,21 +37,37 @@ window.addEventListener('load', () => {
     lucide.createIcons();
 
     // Pen Controls UI Integration
-    const shapeSidebar = document.querySelector('.shape-sidebar');
+    // Sidebar was removed. Move pen controls to main toolbar dynamically or a floating panel.
+    // We'll append it to the toolbar for now when pen is selected.
+    const toolbarTools = document.querySelector('.toolbar .tools');
     const penControls = document.createElement('div');
     penControls.className = 'pen-controls';
+    penControls.style.display = 'none'; // handled via data-tool in CSS
+    penControls.style.flexDirection = 'row';
+    penControls.style.borderBottom = 'none';
+    penControls.style.padding = '0';
     penControls.innerHTML = `
-        <div class="sidebar-section">Pen Style</div>
         <input type="color" class="pen-color-picker" value="#4361ee" title="Pen Color">
         <input type="range" class="pen-size-slider" min="1" max="10" value="2" title="Pen Size">
     `;
-    shapeSidebar.insertBefore(penControls, shapeSidebar.children[0]);
+    toolbarTools.insertBefore(penControls, document.getElementById('tool-eraser'));
     document.querySelector('.pen-color-picker').addEventListener('input', (e) => penColor = e.target.value);
     document.querySelector('.pen-size-slider').addEventListener('input', (e) => penSize = e.target.value);
 
     // Image Upload
     const imageUpload = document.getElementById('image-upload');
     imageUpload.addEventListener('change', handleImageUpload);
+    
+    // Settings Logic
+    const themeSelect = document.getElementById('theme-select');
+    themeSelect.addEventListener('change', (e) => {
+        document.body.setAttribute('data-theme', e.target.value);
+    });
+    
+    const gridSelect = document.getElementById('grid-select');
+    gridSelect.addEventListener('change', (e) => {
+        document.body.setAttribute('data-grid', e.target.value);
+    });
 
     // --- Helper Functions ---
 
@@ -75,9 +91,25 @@ window.addEventListener('load', () => {
             return; // keep current tool active
         }
         
+        if (id === 'tool-shapes') return; // Dropdown trigger only
+        if (id === 'tool-settings') {
+            document.getElementById('settings-modal').classList.remove('hidden');
+            return;
+        }
+        
         console.log(`Setting active tool: ${id}`);
+        // Reset Ask AI state
+        document.getElementById('ask-ai-trigger').classList.remove('active');
+        
         currentTool = id;
         document.body.setAttribute('data-tool', id);
+        
+        // Handle Pen Controls visibility
+        if(id === 'tool-pen') {
+            penControls.style.display = 'flex';
+        } else {
+            penControls.style.display = 'none';
+        }
         
         toolBtns.forEach(btn => btn.classList.toggle('active', btn.id === id));
         shapeBtns.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-shape') === id));
@@ -144,6 +176,10 @@ window.addEventListener('load', () => {
 
         if (!idOverride) elements.push({ id, type: 'math', x: sx, y: sy, content });
         setTimeout(() => { mf.focus(); activeMathField = mf; }, 50);
+        
+        // Ask AI Trigger
+        block.addEventListener('click', (e) => handleAskAiClick(e, block, 'math', mf.value));
+        
         return block;
     }
 
@@ -192,6 +228,10 @@ window.addEventListener('load', () => {
 
         if (!idOverride) elements.push({ id, type: 'text', x: sx, y: sy, content });
         setTimeout(() => block.focus(), 50);
+        
+        // Ask AI Trigger
+        block.addEventListener('click', (e) => handleAskAiClick(e, block, 'text', block.innerText));
+        
         return block;
     }
 
@@ -327,6 +367,7 @@ window.addEventListener('load', () => {
 
     function attachInteractionEvents(el, id, isText = false) {
         const evHandler = (e) => {
+            if (currentTool === 'tool-ask-ai') return; // let the click handler override
             if (currentTool === 'tool-eraser') { 
                 removeEl(id); 
                 e.stopPropagation(); 
@@ -418,10 +459,12 @@ window.addEventListener('load', () => {
             createText(p.x, p.y);
             e.preventDefault();
         } else if (currentTool === 'tool-pen') {
+            // Smooth freehand approach
             const res = createPenPath(`M ${p.x} ${p.y}`, penColor, penSize);
             currentPenPath = res.path;
             const data = elements.find(ev => ev.id === res.id);
-            data.pathData = `M ${p.x} ${p.y}`; // start path trace
+            data.pathData = `M ${p.x} ${p.y}`;
+            data.points = [{x: p.x, y: p.y}]; // Store points for smoothing
             e.preventDefault();
         } else if (currentTool === 'tool-select') {
             if (e.target === grid || e.target.id === 'workspace-content' || e.target.parentElement?.id === 'workspace-content') {
@@ -429,6 +472,9 @@ window.addEventListener('load', () => {
                 marquee.classList.remove('hidden');
                 marquee.style.width = '0'; marquee.style.height = '0';
             }
+        } else if (currentTool === 'tool-ask-ai') {
+            // If they click empty grid while in Ask AI mode, cancel it.
+            setActiveTool('tool-select');
         }
     }
 
@@ -489,11 +535,22 @@ window.addEventListener('load', () => {
             }
         } else if (currentTool === 'tool-pen' && currentPenPath) {
             const data = elements.find(ev => ev.id === currentPenPath.id);
-            if (data) {
-                data.pathData += ` L ${p.x} ${p.y}`;
-                currentPenPath.setAttribute('d', data.pathData);
+            if (data && data.points) {
+                // Collect points and draw smooth quadratic bezier curves
+                data.points.push({x: p.x, y: p.y});
+                if(data.points.length > 2) {
+                    let d = `M ${data.points[0].x} ${data.points[0].y}`;
+                    for (let i = 1; i < data.points.length - 1; i++) {
+                        const xc = (data.points[i].x + data.points[i + 1].x) / 2;
+                        const yc = (data.points[i].y + data.points[i + 1].y) / 2;
+                        d += ` Q ${data.points[i].x} ${data.points[i].y}, ${xc} ${yc}`;
+                    }
+                    d += ` L ${data.points[data.points.length - 1].x} ${data.points[data.points.length - 1].y}`;
+                    data.pathData = d;
+                    currentPenPath.setAttribute('d', data.pathData);
+                }
             }
-        } else if (!['tool-math', 'tool-text', 'tool-eraser', 'tool-image'].includes(currentTool)) {
+        } else if (!['tool-math', 'tool-text', 'tool-eraser', 'tool-image', 'tool-ask-ai'].includes(currentTool)) {
             // Shape Preview
             const shapeType = currentTool.startsWith('tool-') ? currentTool.substring(5) : currentTool;
             if (!currentPreview) {
@@ -523,7 +580,7 @@ window.addEventListener('load', () => {
         
         if (currentTool === 'tool-pen') {
             currentPenPath = null;
-        } else if (!['tool-select', 'tool-math', 'tool-text', 'tool-eraser', 'tool-image'].includes(currentTool)) {
+        } else if (!['tool-select', 'tool-math', 'tool-text', 'tool-eraser', 'tool-image', 'tool-ask-ai'].includes(currentTool)) {
             if (currentPreview) { currentPreview.remove(); currentPreview = null; }
             if (Math.abs(p.x - startPos.x) > 5 || Math.abs(p.y - startPos.y) > 5) {
                 const shapeType = currentTool.startsWith('tool-') ? currentTool.substring(5) : currentTool;
@@ -583,6 +640,26 @@ window.addEventListener('load', () => {
         }
     });
 
+    // Drag and Drop Images
+    window.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+    window.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); });
+    window.addEventListener('drop', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const p = getPos(e);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => createImage(p.x, p.y, event.target.result);
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+
+    // UI Wiring
+    const settingsModal = document.getElementById('settings-modal');
+    document.getElementById('close-settings').addEventListener('click', () => settingsModal.classList.add('hidden'));
+
     // Control Wiring
     toolBtns.forEach(btn => btn.addEventListener('click', () => setActiveTool(btn.id)));
     shapeBtns.forEach(btn => btn.addEventListener('click', () => setActiveTool(btn.getAttribute('data-shape'))));
@@ -598,6 +675,8 @@ window.addEventListener('load', () => {
 
     document.getElementById('menu-open').onclick = () => {
         const input = document.getElementById('mnf-upload');
+        // Reset the input so the same file can be selected again
+        input.value = '';
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -613,7 +692,7 @@ window.addEventListener('load', () => {
                         else if (d.type === 'pen') createPenPath(d.pathData, d.color, d.width, d.id);
                         else if (d.type === 'shape') createShape(d.kind, d.x1, d.y1, d.x2, d.y2, d.id);
                     });
-                } catch(err) { alert("Failed to open MNF file."); }
+                } catch(err) { alert("Failed to open MNF file. It might be corrupted."); }
             };
             reader.readAsText(file);
         };
@@ -685,6 +764,66 @@ window.addEventListener('load', () => {
             createText(x, y, text);
         }
     });
+
+    // Ask AI Feature Logic
+    const askAiTrigger = document.getElementById('ask-ai-trigger');
+    const aiPopup = document.getElementById('ai-popup');
+    const aiContent = document.getElementById('ai-content');
+    
+    askAiTrigger.addEventListener('click', () => {
+        if(currentTool === 'tool-ask-ai') {
+            setActiveTool('tool-select');
+        } else {
+            setActiveTool('tool-ask-ai');
+            askAiTrigger.classList.add('active');
+        }
+    });
+
+    document.getElementById('close-ai').addEventListener('click', () => {
+        aiPopup.classList.add('hidden');
+    });
+
+    function handleAskAiClick(e, blockNode, type, content) {
+        if (currentTool !== 'tool-ask-ai') return;
+        
+        e.stopPropagation();
+        const rect = blockNode.getBoundingClientRect();
+        
+        aiPopup.style.left = `${rect.right + 20}px`;
+        aiPopup.style.top = `${rect.top}px`;
+        aiPopup.classList.remove('hidden');
+        
+        aiContent.innerHTML = `<div class="typewriter">Analyzing assignment...</div>`;
+        
+        // Mock Verification Responses based on content
+        setTimeout(() => {
+            let response = "This assignment is well formatted.";
+            const str = content.toLowerCase();
+            if (type === 'math') {
+                if (str.includes('=') && (str.includes('x') || str.includes('y'))) {
+                    response = "✓ The algebraic equation structure is correct! Make sure to isolate the variables correctly when solving.";
+                } else if (str.includes('\\int')) {
+                    response = "✓ Integral notation looks mathematically sound. Don't forget the + C if it's indefinite!";
+                } else if (str.length < 3) {
+                    response = "This expression is quite short. Is there more to evaluate?";
+                } else {
+                    response = "✓ The expression syntax is valid. No mathematical syntax errors detected.";
+                }
+            } else {
+                if (str.includes('?')) {
+                    response = "It looks like you're asking a question here. Want me to derive a solution?";
+                } else if (str.includes('wrong') || str.includes('error')) {
+                    response = "I double-checked your work. The previous step seems consistent.";
+                } else {
+                    response = "Your text notes look clear and readable.";
+                }
+            }
+            
+            aiContent.innerHTML = `<div style="animation: popupFade 0.3s ease-out"><strong>AI Feedback:</strong><br><br>${response}</div>`;
+        }, 1500);
+        
+        setActiveTool('tool-select'); // reset tool
+    }
 
     console.log('MathNotes: Initialization Complete');
 });
