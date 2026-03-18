@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathNotes — Smart Student Notebook</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- MathLive for math editing -->
+    <script defer src="https://unpkg.com/mathlive"></script>
+    <!-- Lucide for icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body data-theme="dark" data-mode="notes" data-notes-lines="off">
+    <div id="app">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="top-btn" id="btn-home" title="Welcome / Home" style="margin-right: 8px;"><i data-lucide="home"></i></button>
+                <div class="logo">
+                    <i data-lucide="book-open"></i>
+                    <span>MathNotes</span>
+                </div>
+                <div class="doc-title-wrap">
+                    <input type="text" id="doc-title" value="Untitled Notes" placeholder="Document title..." spellcheck="false">
+                </div>
+            </div>
+            <div class="top-bar-center">
+                <!-- Autsave Indicator -->
+                <span id="autosave-status" class="autosave-status" style="display: none; font-size: 0.8rem; color: var(--text-muted); margin-right: 15px;"><i data-lucide="check-circle-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i>Saved</span>
+                <!-- Mode Toggle -->
+                <div class="mode-toggle" id="mode-toggle">
+                    <button class="mode-btn active" data-mode="notes" title="Notes Mode">
+                        <i data-lucide="file-text"></i>
+                        <span>Notes</span>
+                    </button>
+                    <button class="mode-btn" data-mode="math" title="Math Mode">
+                        <i data-lucide="sigma"></i>
+                        <span>Math</span>
+                    </button>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <button class="top-btn" id="btn-templates" title="Templates"><i data-lucide="layout-template"></i></button>
+                <button class="top-btn" id="btn-formulas" title="Favorite Formulas"><i data-lucide="bookmark"></i></button>
+                <div class="separator-v"></div>
+                <button class="top-btn" id="btn-new" title="New Document"><i data-lucide="file-plus"></i></button>
+                <button class="top-btn" id="btn-save" title="Save (.mnf)"><i data-lucide="save"></i></button>
+                <button class="top-btn" id="btn-open" title="Open (.mnf)"><i data-lucide="folder-open"></i></button>
+                <button class="top-btn" id="btn-cloud-save" title="Save to Cloud"><i data-lucide="cloud-upload"></i></button>
+                <button class="top-btn" id="btn-cloud-open" title="Open from Cloud"><i data-lucide="cloud-download"></i></button>
+                <button class="top-btn" id="btn-export" title="Export PDF"><i data-lucide="file-down"></i></button>
+                <div class="separator-v"></div>
+                <!-- Account Button -->
+                <button class="top-btn" id="btn-account" title="Account / Sign In"><i data-lucide="user-circle"></i></button>
+                <button class="top-btn" id="btn-settings" title="Settings"><i data-lucide="settings"></i></button>
+            </div>
+        </header>
+
+        <!-- Rich Text Toolbar (Notes Mode) -->
+        <div class="format-bar" id="format-bar">
+            <select id="fmt-heading" title="Heading">
+                <option value="p">Normal</option>
+                <option value="h1">Heading 1</option>
+                <option value="h2">Heading 2</option>
+                <option value="h3">Heading 3</option>
+            </select>
+            <select id="fmt-fontsize" title="Font Size">
+                <option value="2">Small</option>
+                <option value="3" selected>Normal</option>
+                <option value="4">Large</option>
+                <option value="5">X-Large</option>
+                <option value="6">Huge</option>
+            </select>
+            <div class="separator-v"></div>
+            <button class="fmt-btn" data-cmd="bold" title="Bold (Ctrl+B)"><i data-lucide="bold"></i></button>
+            <button class="fmt-btn" data-cmd="italic" title="Italic (Ctrl+I)"><i data-lucide="italic"></i></button>
+            <button class="fmt-btn" data-cmd="underline" title="Underline (Ctrl+U)"><i data-lucide="underline"></i></button>
+            <button class="fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><i data-lucide="strikethrough"></i></button>
+            
+            <div class="color-picker-wrap" title="Text Color">
+                <i data-lucide="palette" style="width: 16px; height: 16px; position: absolute; pointer-events: none; color: var(--text-color);"></i>
+                <input type="color" id="fmt-color" class="color-input" value="#ffffff">
+            </div>
+            <div class="color-picker-wrap" title="Highlight Color">
+                <i data-lucide="highlighter" style="width: 16px; height: 16px; position: absolute; pointer-events: none; color: var(--text-color);"></i>
+                <input type="color" id="fmt-bg-color" class="color-input" value="#ffff00">
+            </div>
+
+            <div class="separator-v"></div>
+            <label class="fmt-color-wrap" title="Text Color">
+                <i data-lucide="palette"></i>
+                <input type="color" id="fmt-textcolor" value="#000000">
+            </label>
+            <label class="fmt-color-wrap highlight" title="Highlight">
+                <i data-lucide="highlighter"></i>
+                <input type="color" id="fmt-highlight" value="#fef08a">
+            </label>
+            <div class="separator-v"></div>
+            <button class="fmt-btn" data-cmd="insertUnorderedList" title="Bullet List"><i data-lucide="list"></i></button>
+            <button class="fmt-btn" data-cmd="insertOrderedList" title="Numbered List"><i data-lucide="list-ordered"></i></button>
+            <button class="fmt-btn" data-cmd="indent" title="Indent"><i data-lucide="indent"></i></button>
+            <button class="fmt-btn" data-cmd="outdent" title="Outdent"><i data-lucide="outdent"></i></button>
+            <div class="separator-v"></div>
+            <button class="fmt-btn" id="fmt-inline-math" title="Insert Inline Math ($$)"><i data-lucide="sigma"></i></button>
+            <button class="fmt-btn" id="fmt-table" title="Insert Table"><i data-lucide="table"></i></button>
+            <button class="fmt-btn" id="fmt-checklist" title="Checklist"><i data-lucide="check-square"></i></button>
+            <button class="fmt-btn" id="fmt-blockquote" title="Blockquote"><i data-lucide="quote"></i></button>
+            <button class="fmt-btn" id="fmt-codeblock" title="Code Block"><i data-lucide="code"></i></button>
+            <button class="fmt-btn" id="fmt-hr" title="Horizontal Rule"><i data-lucide="minus"></i></button>
+            <button class="fmt-btn" id="fmt-image" title="Insert Image"><i data-lucide="image"></i></button>
+            <button class="fmt-btn" id="fmt-image-ref" title="Add Reference Image (side panel)"><i data-lucide="panel-right"></i></button>
+            <div class="separator-v"></div>
+            <label class="fmt-toggle" title="Show lines on page">
+                <input type="checkbox" id="notes-lines-toggle">
+                <span>Lines</span>
+            </label>
+        </div>
+
+        <!-- Math Toolbar (Math Mode) -->
+        <div class="math-toolbar hidden" id="math-toolbar">
+            <div class="tools">
+                <button class="tool-btn active" id="tool-select" title="Select (V)"><i data-lucide="mouse-pointer-2"></i></button>
+                <button class="tool-btn" id="tool-math" title="Math Block (M)"><i data-lucide="sigma"></i></button>
+                <button class="tool-btn" id="tool-text" title="Text Block (T)"><i data-lucide="type"></i></button>
+                <div class="separator-v"></div>
+                <button class="tool-btn" id="tool-pen" title="Pen (P)"><i data-lucide="pen-tool"></i></button>
+                <button class="tool-btn" id="tool-highlighter" title="Highlighter"><i data-lucide="highlighter"></i></button>
+                <button class="tool-btn" id="tool-eraser" title="Eraser (E)"><i data-lucide="eraser"></i></button>
+                
+                <div class="color-picker-wrap math-color" title="Stroke/Fill Color">
+                    <i data-lucide="palette" style="width: 16px; height: 16px; position: absolute; pointer-events: none; color: var(--text-color);"></i>
+                    <input type="color" id="math-color" class="color-input" value="#ffffff">
+                </div>
+
+                <div class="separator-v"></div>
+                <button class="tool-btn" id="tool-image" title="Insert Image"><i data-lucide="image"></i></button>
+                <!-- Shapes Dropdown -->
+                <div class="dropdown">
+                    <button class="tool-btn" id="tool-shapes" title="Shapes"><i data-lucide="shapes"></i></button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-label">Draw Shape</div>
+                        <div class="dropdown-grid">
+                            <button class="shape-btn" data-shape="square" title="Square"><i data-lucide="box"></i></button>
+                            <button class="shape-btn" data-shape="circle" title="Circle"><i data-lucide="circle"></i></button>
+                            <button class="shape-btn" data-shape="triangle" title="Triangle"><i data-lucide="triangle"></i></button>
+                            <button class="shape-btn" data-shape="line" title="Line"><i data-lucide="minus"></i></button>
+                            <button class="shape-btn" data-shape="arrow" title="Arrow"><i data-lucide="move-right"></i></button>
+                            <button class="shape-btn" data-shape="double-arrow" title="Double Arrow"><i data-lucide="move-horizontal"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="separator-v"></div>
+                <button class="tool-btn" id="tool-scan" title="Scan Notes"><i data-lucide="scan"></i></button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Left Reference Panel -->
+            <div id="ref-panel-left" class="ref-panel left hidden">
+                <div class="ref-panel-header">
+                    <span>References</span>
+                    <button class="icon-btn" id="close-ref-left"><i data-lucide="x"></i></button>
+                </div>
+                <div id="ref-images-left" class="ref-images"></div>
+            </div>
+
+            <!-- Notes Mode: Rich Text Editor -->
+            <div id="notes-editor" class="notes-editor">
+                <div id="editor-page" class="editor-page" contenteditable="true">
+                    <h1>Welcome to MathNotes 📓</h1>
+                    <p>Start typing your notes. Use the toolbar for formatting.</p>
+                    <p>Type <code>$$</code> for inline math. Switch to <strong>Math Mode</strong> for the full workspace.</p>
+                </div>
+            </div>
+
+            <!-- Right Reference Panel -->
+            <div id="ref-panel-right" class="ref-panel right hidden">
+                <div class="ref-panel-header">
+                    <span>References</span>
+                    <button class="icon-btn" id="close-ref-right"><i data-lucide="x"></i></button>
+                </div>
+                <div id="ref-images-right" class="ref-images"></div>
+            </div>
+
+            <!-- Math Mode: Canvas Workspace -->
+            <div id="math-workspace" class="math-workspace hidden">
+                <main id="editor-container">
+                    <div id="canvas-grid" class="grid-background">
+                        <div id="workspace-content">
+                            <div id="pdf-layer"></div>
+                            <svg id="drawing-layer" width="5000" height="5000"></svg>
+                            <div id="math-layer"></div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span id="word-count">0 words</span>
+                <span class="status-sep">·</span>
+                <span id="char-count">0 chars</span>
+            </div>
+            <div class="status-right">
+                <button id="focus-mode-btn" class="status-btn" title="Focus Mode"><i data-lucide="eye"></i> Focus</button>
+                <button id="pomodoro-btn" class="status-btn" title="Pomodoro Timer"><i data-lucide="timer"></i> <span id="pomodoro-display">25:00</span></button>
+            </div>
+        </footer>
+
+        <!-- Selection Marquee (Math Mode) -->
+        <div id="selection-marquee" class="hidden"></div>
+
+        <!-- Graphing Calculator Trigger -->
+        <button id="calc-trigger" title="Graphing Calculator" class="floating-action-btn calc-btn">
+            <i data-lucide="function-square"></i>
+            <span>Graph</span>
+        </button>
+
+        <!-- Graphing Calculator Panel -->
+        <div id="calc-panel" class="calc-panel hidden">
+            <div class="calc-header">
+                <span><i data-lucide="function-square"></i> Graphing Calculator</span>
+                <div class="calc-header-actions">
+                    <button id="calc-import" class="calc-action-btn" title="Import graph to workspace"><i data-lucide="download"></i></button>
+                    <button id="calc-close" class="icon-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+            </div>
+            <canvas id="graph-canvas" width="400" height="300"></canvas>
+            <div id="equation-list" class="equation-list"></div>
+            <button id="add-equation" class="calc-add-btn"><i data-lucide="plus"></i> Add Equation</button>
+        </div>
+
+        <!-- Welcome Modal -->
+        <div id="welcome-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2 style="display: flex; align-items: center; gap: 8px; color: var(--primary-color);">
+                        <i data-lucide="book-open"></i> Welcome to MathNotes
+                    </h2>
+                    <button id="close-welcome" class="close-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+                <div class="modal-body" style="text-align: center; padding: 30px 20px;">
+                    <p class="text-muted" style="margin-bottom: 24px;">Your intelligent notebook for math, science, and more.</p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                        <button id="welcome-new-notes" class="welcome-action-btn">
+                            <i data-lucide="file-text"></i>
+                            <span>New Notes Document</span>
+                            <small>Rich text editor with math support</small>
+                        </button>
+                        <button id="welcome-new-math" class="welcome-action-btn">
+                            <i data-lucide="sigma"></i>
+                            <span>New Math Workspace</span>
+                            <small>Infinite canvas for freehand & math</small>
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <button id="welcome-open" class="btn secondary" style="justify-content: center;">
+                            <i data-lucide="folder-open"></i> Open (.mnf)
+                        </button>
+                        <button id="welcome-templates" class="btn secondary" style="justify-content: center;">
+                            <i data-lucide="layout-template"></i> Browse Templates
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal hidden">
+            <div class="modal-content settings-content">
+                <div class="modal-header">
+                    <h2>Settings</h2>
+                    <button id="close-settings" class="close-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label>Theme</label>
+                        <select id="theme-select" class="form-select">
+                            <option value="light">Light</option>
+                            <option value="dark" selected>Dark</option>
+                            <option value="sepia">Sepia</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>Grid Style (Math Mode)</label>
+                        <select id="grid-select" class="form-select">
+                            <option value="classic">Grid</option>
+                            <option value="dots">Dots</option>
+                            <option value="lines">Lines</option>
+                            <option value="blank">Blank</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scanner Modal -->
+        <div id="scanner-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Scan Math Notes</h2>
+                    <button id="close-scanner" class="close-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div id="scan-controls" class="scan-controls">
+                        <label class="scan-btn" title="Upload a file">
+                            <i data-lucide="upload"></i> Upload File
+                            <input type="file" id="scan-upload" accept="image/png, image/jpeg, application/pdf" hidden>
+                        </label>
+                        <label class="scan-btn primary" title="Camera">
+                            <i data-lucide="camera"></i> Take Photo
+                            <input type="file" id="scan-camera" accept="image/*" capture="environment" hidden>
+                        </label>
+                    </div>
+                    <div id="scan-processing-area" class="hidden">
+                        <div class="status-indicator">
+                            <i data-lucide="loader-2" class="spinner"></i> <span id="scan-status">Initializing...</span>
+                        </div>
+                        <canvas id="scan-canvas-output"></canvas>
+                        <canvas id="scan-canvas-input" hidden></canvas>
+                    </div>
+                    <div id="scan-review-area" class="hidden">
+                        <h3>Review &amp; Edit</h3>
+                        <textarea id="scan-result-text" rows="6"></textarea>
+                        <div class="review-actions">
+                            <button id="scan-retry" class="btn secondary">Retry</button>
+                            <button id="scan-insert" class="btn primary"><i data-lucide="check"></i> Insert</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates Modal -->
+        <div id="templates-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Templates</h2>
+                    <button id="close-templates" class="close-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted" style="margin-bottom: 15px;">Select a template to insert at the bottom of your notes.</p>
+                    <div class="template-grid">
+                        <button class="template-btn" data-template="math">
+                            <i data-lucide="sigma" style="width: 32px; height: 32px; margin-bottom: 8px;"></i>
+                            <span>Math Problem</span>
+                        </button>
+                        <button class="template-btn" data-template="study">
+                            <i data-lucide="book-open" style="width: 32px; height: 32px; margin-bottom: 8px;"></i>
+                            <span>Study Summary</span>
+                        </button>
+                        <button class="template-btn" data-template="diagram">
+                            <i data-lucide="git-branch" style="width: 32px; height: 32px; margin-bottom: 8px;"></i>
+                            <span>Diagram Area</span>
+                        </button>
+                        <button class="template-btn" data-template="exercise">
+                            <i data-lucide="list-checks" style="width: 32px; height: 32px; margin-bottom: 8px;"></i>
+                            <span>Exercise Solutions</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulas Modal -->
+        <div id="formulas-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Favorite Formulas</h2>
+                    <button id="close-formulas" class="close-btn" title="Close"><i data-lucide="x"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="formula-add-section" style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <input type="text" id="new-formula-name" placeholder="Formula Name (e.g. Quadratic)" class="form-input" style="flex: 1;" />
+                        <input type="text" id="new-formula-latex" placeholder="LaTeX (e.g. x^2 + 1)" class="form-input" style="flex: 2;" />
+                        <button id="btn-add-formula" class="btn primary" style="padding: 8px 16px;">Add</button>
+                    </div>
+                    <div id="formulas-list" class="formulas-list">
+                        <!-- Formulas will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- Hidden Inputs -->
+        <input type="file" id="mnf-upload" accept=".mnf" style="display:none;">
+        <input type="file" id="image-upload" accept="image/*" style="display:none;">
+        <input type="file" id="notes-image-upload" accept="image/*" style="display:none;">
+        <input type="file" id="ref-image-upload" accept="image/*" style="display:none;">
+    </div>
+
+    <!-- Move Account Modal to absolute top layer -->
+    <div id="account-modal" class="modal hidden" style="z-index: 999999;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Your Account</h2>
+                <button class="close-btn" id="btn-close-account"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <div id="account-profile-pic-container" style="margin-bottom: 15px;">
+                    <!-- Filled dynamically -->
+                </div>
+                <h3 id="account-name" style="margin-bottom: 5px; font-weight: 700;"></h3>
+                <p id="account-email" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px;"></p>
+                <div id="account-badge-container"></div>
+                
+                <hr style="border: none; height: 1px; background: var(--border-color); margin: 24px 0;">
+                
+                <div class="storage-info" style="text-align: left; margin-bottom: 20px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <h4 style="margin-bottom: 8px; font-size: 0.9rem;">Cloud Storage</h4>
+                    <div id="storage-usage-bar" style="height: 6px; background: #334155; border-radius: 10px; margin-bottom: 6px; overflow: hidden;">
+                        <div id="storage-usage-fill" style="height: 100%; width: 0%; background: var(--primary-color); transition: width 0.3s;"></div>
+                    </div>
+                    <p id="storage-usage-text" style="font-size: 0.8rem; color: var(--text-muted);">Calculating usage...</p>
+                </div>
+
+                <h4 style="text-align: left; margin-bottom: 10px; color: var(--text-color);">Cloud Notebooks</h4>
+                <div id="cloud-notes-list" style="text-align: left; max-height: 200px; overflow-y: auto; margin-bottom: 24px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.2);">
+                    <p style="color: var(--text-muted); font-style: italic; font-size: 0.85rem;">Loading notebooks...</p>
+                </div>
+
+                <button id="btn-logout" class="btn secondary" style="width: 100%; justify-content: center; padding: 12px; font-weight: 600;">
+                    <i data-lucide="log-out"></i> Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Auth & Cloud Storage Logic -->
+    <script type="module" src="firebase-auth.js"></script>
+    <script type="module" src="scanner.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>

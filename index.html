@@ -3,229 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MathNotes - Pro Mathematical Workspace</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- MathLive for math editing -->
-    <script defer src="https://unpkg.com/mathlive"></script>
-    <!-- Lucide for icons -->
+    <title>MathNotes — The Smartest Way to Take Notes</title>
+    <link rel="stylesheet" href="landing.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- jsPDF for PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- pdf.js for PDF import -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- html2canvas for PDF export (captures DOM) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- OpenCV.js for Image Preprocessing -->
-    <script async src="https://docs.opencv.org/4.8.0/opencv.js" type="text/javascript"></script>
-    <!-- Tesseract.js for OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
-<body data-tool="tool-select" data-theme="light" data-grid="classic">
-    <div id="app">
-        <!-- Menu Bar -->
-        <nav class="menu-bar">
-            <div class="menu-item" id="menu-new">New</div>
-            <div class="menu-item" id="menu-open">Open .mnf</div>
-            <div class="menu-item" id="menu-save">Save as .mnf</div>
-            <div class="menu-item" id="menu-export">Export PDF</div>
-        </nav>
-
-        <!-- Main Toolbar -->
-        <header class="toolbar">
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <div class="container">
             <div class="logo">
-                <i data-lucide="calculator"></i>
+                <i data-lucide="book-open"></i>
                 <span>MathNotes</span>
             </div>
-            <div class="tools">
-                <button class="tool-btn active" id="tool-select" title="Select & Move (V)">
-                    <i data-lucide="mouse-pointer-2"></i>
-                </button>
-                <button class="tool-btn" id="tool-math" title="Math Block (M)">
-                    <i data-lucide="sigma"></i>
-                </button>
-                <button class="tool-btn" id="tool-text" title="Text Block (T)">
-                    <i data-lucide="type"></i>
-                </button>
-                <div class="separator"></div>
-                <button class="tool-btn" id="tool-pen" title="Pen Tool (P)">
-                    <i data-lucide="pen-tool"></i>
-                </button>
-                <button class="tool-btn" id="tool-eraser" title="Eraser (E)">
-                    <i data-lucide="eraser"></i>
-                </button>
-                <div class="separator"></div>
-                <button class="tool-btn" id="tool-image" title="Insert Image (I)">
-                    <i data-lucide="image"></i>
-                </button>
-                <!-- Collapsible Shapes Dropdown -->
-                <div class="dropdown">
-                    <button class="tool-btn" id="tool-shapes" title="Shapes (S)">
-                        <i data-lucide="shapes"></i>
-                    </button>
-                    <div class="dropdown-content">
-                        <div class="dropdown-label">Draw Shape</div>
-                        <div class="dropdown-grid">
-                            <button class="shape-btn" data-shape="square" title="Square"><i data-lucide="box"></i></button>
-                            <button class="shape-btn" data-shape="circle" title="Circle"><i data-lucide="circle"></i></button>
-                            <button class="shape-btn" data-shape="triangle" title="Triangle"><i data-lucide="triangle"></i></button>
-                            <button class="shape-btn" data-shape="line" title="Line"><i data-lucide="minus"></i></button>
-                            <button class="shape-btn" data-shape="arrow" title="Arrow"><i data-lucide="move-right"></i></button>
-                            <button class="shape-btn" data-shape="double-arrow" title="Double Arrow"><i data-lucide="move-horizontal"></i></button>
-                            <button class="shape-btn" data-shape="dash-line" title="Dashed Line"><i data-lucide="more-horizontal"></i></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="separator"></div>
-                <button class="tool-btn" id="tool-scan" title="Scan Notes">
-                    <i data-lucide="scan"></i>
-                </button>
-                <div class="separator"></div>
-                <!-- Settings Button -->
-                <button class="tool-btn" id="tool-settings" title="Workspace Settings">
-                    <i data-lucide="settings"></i>
-                </button>
-            </div>
-        </header>
-
-        <div class="main-content">
-            <!-- Removed Shape Sidebar previously here -->
-
-            <!-- Main Editor Area -->
-            <main id="editor-container">
-                <div id="canvas-grid" class="grid-background">
-                    <!-- Unified Content Layer -->
-                    <div id="workspace-content">
-                        <!-- PDF Rendering Layer -->
-                        <div id="pdf-layer"></div>
-                        <!-- Drawing Layer -->
-                        <svg id="drawing-layer" width="5000" height="5000"></svg>
-                        <!-- Math Blocks Layer -->
-                        <div id="math-layer"></div>
-                    </div>
-                </div>
-            </main>
-        </div>
-        <!-- Selection Marquee -->
-        <div id="selection-marquee" class="hidden"></div>
-
-        <!-- Graphing Calculator Trigger -->
-        <button id="calc-trigger" title="Graphing Calculator" class="floating-action-btn calc-btn">
-            <i data-lucide="function-square"></i>
-            <span>Graph</span>
-        </button>
-
-        <!-- Ask AI Floating Button -->
-        <button id="ask-ai-trigger" title="Ask AI About Section" class="floating-action-btn pulse-glow">
-            <i data-lucide="sparkles"></i> 
-            <span>Ask AI</span>
-        </button>
-
-        <!-- Graphing Calculator Panel -->
-        <div id="calc-panel" class="calc-panel hidden">
-            <div class="calc-header">
-                <span><i data-lucide="function-square"></i> Graphing Calculator</span>
-                <div class="calc-header-actions">
-                    <button id="calc-import" class="calc-action-btn" title="Import graph to workspace"><i data-lucide="download"></i></button>
-                    <button id="calc-close" class="icon-btn" title="Close"><i data-lucide="x"></i></button>
-                </div>
-            </div>
-            <canvas id="graph-canvas" width="400" height="300"></canvas>
-            <div id="equation-list" class="equation-list">
-                <!-- Equations will be added dynamically -->
-            </div>
-            <button id="add-equation" class="calc-add-btn"><i data-lucide="plus"></i> Add Equation</button>
-        </div>
-
-        <!-- Ask AI Popup -->
-        <div id="ai-popup" class="glass-popup hidden">
-            <div class="ai-header">
-                <i data-lucide="bot"></i> AI Analysis
-                <button id="close-ai" class="icon-btn"><i data-lucide="x"></i></button>
-            </div>
-            <div id="ai-content" class="ai-body">
-                <div class="typewriter">Analyzing assignment...</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#download" class="btn-primary">Get Started</a>
             </div>
         </div>
+    </nav>
 
-        <!-- Settings Modal -->
-        <div id="settings-modal" class="modal hidden">
-            <div class="modal-content settings-content">
-                <div class="modal-header">
-                    <h2>Workspace Settings</h2>
-                    <button id="close-settings" class="close-btn" title="Close"><i data-lucide="x"></i></button>
+    <header class="hero">
+        <div class="hero-blur primary-blur"></div>
+        <div class="hero-blur accent-blur"></div>
+        <div class="container">
+            <div class="hero-content">
+                <span class="badge">Experimental AI Features Now Live</span>
+                <h1>Your Genius <span class="gradient-text">AI Workbook</span></h1>
+                <p>The ultimate workspace for students. Scan handwritten math, solve complex equations, and sync everything to the cloud.</p>
+                <div class="hero-actions">
+                    <a href="app.html" class="btn-hero primary">
+                        <i data-lucide="play"></i>
+                        Launch Web Edition
+                    </a>
+                    <a href="#download" class="btn-hero secondary">
+                        <i data-lucide="download"></i>
+                        Download for Desktop
+                    </a>
                 </div>
-                <div class="modal-body">
-                    <div class="setting-group">
-                        <label>Theme</label>
-                        <select id="theme-select" class="form-select">
-                            <option value="light">Light Mode</option>
-                            <option value="dark">Dark Mode</option>
-                            <option value="sepia">Sepia Focus</option>
-                        </select>
+            </div>
+            <div class="hero-preview">
+                <div class="glass-card preview-card">
+                    <img src="preview-placeholder.webp" alt="MathNotes Editor Preview" id="hero-img">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Everything you need for <span class="gradient-text">Academic Success</span></h2>
+                <p>Built by students, for students. A seamless flow from paper to digital.</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card glass-card">
+                    <div class="icon-box primary">
+                        <i data-lucide="scan"></i>
                     </div>
-                    <div class="setting-group">
-                        <label>Grid Style</label>
-                        <select id="grid-select" class="form-select">
-                            <option value="classic">Mathematical Grid</option>
-                            <option value="dots">Dotted Grid</option>
-                            <option value="lines">Lined Paper</option>
-                            <option value="blank">Blank Canvas</option>
-                        </select>
+                    <h3>AI Document Scanner</h3>
+                    <p>Point your camera at any equation. Our OCR instantly converts it into editable MathLive expressions.</p>
+                </div>
+                <div class="feature-card glass-card">
+                    <div class="icon-box accent">
+                        <i data-lucide="sigma"></i>
+                    </div>
+                    <h3>Smart Math Workspace</h3>
+                    <p>A dedicated canvas for drawing and math. Use your stylus or keyboard to solve problems with ease.</p>
+                </div>
+                <div class="feature-card glass-card">
+                    <div class="icon-box purple">
+                        <i data-lucide="cloud"></i>
+                    </div>
+                    <h3>Infinite Cloud Storage</h3>
+                    <p>Never lose a note again. Sync your notebooks across all your devices with owner privileges.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download-section">
+        <div class="container">
+            <div class="cta-card glass-card">
+                <h2>Ready to transform your studies?</h2>
+                <p>Choose your preferred way to use MathNotes. The desktop app offers a native, lag-free experience.</p>
+                <div class="cta-actions">
+                    <div class="option">
+                        <h3>Desktop App</h3>
+                        <p>Best for offline use and performance.</p>
+                        <button class="btn-primary large">Download v1.0.0</button>
+                    </div>
+                    <div class="divider-v"></div>
+                    <div class="option">
+                        <h3>Web Edition</h3>
+                        <p>Limited cloud options. No install needed.</p>
+                        <a href="app.html" class="btn-secondary large">Open in Browser</a>
                     </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        
-        <!-- Scanner Modal -->
-        <div id="scanner-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Scan Math Notes</h2>
-                    <button id="close-scanner" class="close-btn" title="Close"><i data-lucide="x"></i></button>
-                </div>
-                <div class="modal-body">
-                    <div id="scan-controls" class="scan-controls">
-                        <label class="scan-btn" title="Upload an image or PDF file">
-                            <i data-lucide="upload"></i> Upload File
-                            <input type="file" id="scan-upload" accept="image/png, image/jpeg, application/pdf" hidden>
-                        </label>
-                        <label class="scan-btn primary" title="Take a photo with your device camera">
-                            <i data-lucide="camera"></i> Take Photo
-                            <input type="file" id="scan-camera" accept="image/*" capture="environment" hidden>
-                        </label>
-                    </div>
-                    
-                    <div id="scan-processing-area" class="hidden">
-                        <div class="status-indicator">
-                            <i data-lucide="loader-2" class="spinner"></i> <span id="scan-status">Initializing AI Models...</span>
-                        </div>
-                        <canvas id="scan-canvas-output"></canvas>
-                        <canvas id="scan-canvas-input" hidden></canvas>
-                    </div>
-
-                    <div id="scan-review-area" class="hidden">
-                        <h3>Review & Edit</h3>
-                        <p class="review-hint">The AI has extracted the following text and math. Correct any OCR mistakes before inserting.</p>
-                        <textarea id="scan-result-text" rows="6"></textarea>
-                        <div class="review-actions">
-                            <button id="scan-retry" class="btn secondary">Scan Another</button>
-                            <button id="scan-insert" class="btn primary"><i data-lucide="check"></i> Insert into Workspace</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 MathNotes by Kwinten De Coninck. All rights reserved.</p>
         </div>
+    </footer>
 
-        <!-- Hidden inputs -->
-        <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
-        <input type="file" id="mnf-upload" accept=".mnf" style="display: none;">
-        <input type="file" id="image-upload" accept="image/*" style="display: none;">
-    </div>
-
-    <!-- Scripts -->
-    <script src="scanner.js"></script>
-    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>
